@@ -1,0 +1,12 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.vercel
+# Go compiled binaries
+project-g/server/server
+project-g/server/server-linux
