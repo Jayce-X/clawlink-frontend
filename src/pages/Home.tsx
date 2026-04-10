@@ -136,7 +136,7 @@ export default function Home() {
       <div className="min-h-[calc(100vh-64px)] flex flex-col">
 
       {/* Hero Section */}
-      <div className="flex-shrink-0 flex flex-col items-center pt-20 pb-8 px-4">
+      <div className="flex-shrink-0 flex flex-col items-center pt-32 pb-8 px-4">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -151,7 +151,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="w-full max-w-2xl mt-10"
+          className="w-full max-w-2xl mt-12"
         >
           <ChatInput
             value={inputText}
