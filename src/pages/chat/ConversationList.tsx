@@ -112,7 +112,8 @@ export default function ConversationList({
   const navigate = useNavigate();
 
   const filtered = useMemo(() => {
-    const convs = conversations;
+    // Only show group conversations (hide C2C private chats)
+    const convs = conversations.filter((c) => c.type === TIM_TYPES.CONV_GROUP);
     if (!searchQuery.trim()) return convs;
     const q = searchQuery.toLowerCase();
     return convs.filter((c) => {

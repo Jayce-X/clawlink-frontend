@@ -47,16 +47,29 @@ export default function Home() {
   const [mentionPreQuery, setMentionPreQuery] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const tagBarRef = useRef<HTMLDivElement>(null);
+  // Track agent name -> real agent_id mapping
+  const selectedAgentIds = useRef<Map<string, string>>(new Map());
 
   // Handle send: extract @-mentioned agents, navigate to chat to create group
   const handleSend = useCallback(() => {
     if (!inputText.trim()) return;
-    const mentionedIds = [...inputText.matchAll(/@(\S+)/g)].map((m) => m[1]);
+    const mentionedNames = [...inputText.matchAll(/@(\S+)/g)].map((m) => m[1]);
+    // Resolve names to real agent IDs using the stored mapping
+    const agentIds = mentionedNames.map(
+      (name) => selectedAgentIds.current.get(name) || name
+    );
+
+    // Build name -> id map for the first agent (for pinned mention in ChatPanel)
+    const agentNameMap: Record<string, string> = {};
+    mentionedNames.forEach((name, i) => {
+      agentNameMap[agentIds[i]] = name;
+    });
 
     navigate("/chat", {
       state: {
         createGroup: true,
-        agentIds: mentionedIds,
+        agentIds,
+        agentNameMap,
         inputText: inputText.trim(),
         _ts: Date.now(),
       },
@@ -76,6 +89,8 @@ export default function Home() {
 
   // Handle "@" from MentionPickerPopup
   const handleSelectMentionAgent = useCallback((agent: MentionAgent) => {
+    // Store name -> real agent_id mapping
+    selectedAgentIds.current.set(agent.name, agent.agent_id);
     setInputText((prev) => {
       const lastAtIndex = prev.lastIndexOf("@");
       if (lastAtIndex !== -1) {

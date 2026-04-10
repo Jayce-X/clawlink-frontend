@@ -6,7 +6,7 @@ import { useTIM } from "../../contexts/TIMContext";
 import {
   getConversationList, getChannelList,
   getChatSDK, TIM_EVENT, TIM_TYPES,
-  createGroupChat, sendTextMessage, addMembersToGroup,
+  createGroupChat, sendTextMessage, sendTextAtMessage, addMembersToGroup,
   type TIMConversation,
 } from "../../services/timService";
 import ConversationList from "./ConversationList";
@@ -140,17 +140,57 @@ export default function ChatLayout() {
         console.log("[CreateGroup] SUCCESS! groupID:", newGroupID);
 
         // Send the homepage input as the first message in the new group
+        // Use sendTextAtMessage so @'d agents receive proper @ notifications
         if (state.inputText) {
           try {
-            await sendTextMessage(newGroupID, state.inputText);
-            console.log("[CreateGroup] Sent first message to new group");
+            // Small delay to let SDK sync after group creation
+            await new Promise(r => setTimeout(r, 500));
+
+            console.log("[CreateGroup] ─── SENDING MESSAGE ───");
+            console.log("[CreateGroup] groupID:", newGroupID);
+            console.log("[CreateGroup] text:", state.inputText);
+            console.log("[CreateGroup] atUserList (agentIds):", agentIds);
+            console.log("[CreateGroup] agentIds type:", typeof agentIds, Array.isArray(agentIds));
+            agentIds.forEach((id: string, i: number) => {
+              console.log(`[CreateGroup]   agentIds[${i}] = "${id}" (length=${id.length})`);
+            });
+
+            const result = await sendTextAtMessage(newGroupID, state.inputText, agentIds);
+            
+            console.log("[CreateGroup] ─── SEND RESULT ───");
+            console.log("[CreateGroup] result:", result);
+            console.log("[CreateGroup] result.data:", result?.data);
+            console.log("[CreateGroup] message object:", result?.data?.message);
+            if (result?.data?.message) {
+              const msg = result.data.message;
+              console.log("[CreateGroup] msg.type:", msg.type);
+              console.log("[CreateGroup] msg.payload:", msg.payload);
+              console.log("[CreateGroup] msg.payload.text:", msg.payload?.text);
+              console.log("[CreateGroup] msg.payload.atUserList:", msg.payload?.atUserList);
+              console.log("[CreateGroup] msg.to:", msg.to);
+              console.log("[CreateGroup] msg.conversationType:", msg.conversationType);
+            }
+            console.log("[CreateGroup] ─── END ───");
           } catch (msgErr) {
-            console.warn("[CreateGroup] Failed to send initial message:", msgErr);
+            console.warn("[CreateGroup] sendTextAtMessage failed, falling back to plain text:", msgErr);
+            try {
+              await sendTextMessage(newGroupID, state.inputText);
+              console.log("[CreateGroup] Sent fallback plain text message");
+            } catch (fallbackErr) {
+              console.warn("[CreateGroup] Failed to send any initial message:", fallbackErr);
+            }
           }
         }
 
-        // Navigate to the new group
-        navigate(`/chat/group/${encodeURIComponent(newGroupID)}`, { replace: true });
+        // Navigate to the new group, carrying the first mentioned agent for pinned mention
+        const firstAgentId = agentIds[0];
+        const firstAgentName = state.agentNameMap?.[firstAgentId] || firstAgentId;
+        navigate(`/chat/group/${encodeURIComponent(newGroupID)}`, {
+          replace: true,
+          state: {
+            initialPinnedAgent: { userID: firstAgentId, nick: firstAgentName },
+          },
+        });
       } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : JSON.stringify(err);
         console.error("[CreateGroup] FAILED:", err);

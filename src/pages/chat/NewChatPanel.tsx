@@ -52,10 +52,17 @@ const NewChatPanel = forwardRef<NewChatPanelHandle, NewChatPanelProps>(function 
 
     if (agentIds.length === 0) return;
 
+    // Build id -> name map for pinned mention in ChatPanel
+    const agentNameMap: Record<string, string> = {};
+    mentionedNames.forEach((name, i) => {
+      agentNameMap[agentIds[i]] = name;
+    });
+
     navigate("/chat", {
       state: {
         createGroup: true,
         agentIds,
+        agentNameMap,
         inputText: inputText.trim(),
         _ts: Date.now(),
       },

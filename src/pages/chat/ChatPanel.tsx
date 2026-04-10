@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Hash, User, Users, X, Loader2, Plus, ArrowUp, ThumbsUp, XCircle, MessageCircle, Trash2 } from "lucide-react";
 import {
   getChannelMessages, getChannelMembers, getChannelProfile,
@@ -343,6 +343,10 @@ export interface ChatPanelHandle {
 }
 
 const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) => void }>(function ChatPanel({ conversation, onStartDM, onOpenAgentBook, onError }, ref) {
+  const chatLocation = useLocation();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const initialPinned = (chatLocation.state as any)?.initialPinnedAgent || null;
+
   const [messages, setMessages] = useState<HubMessage[]>([]);
   const [members, setMembers] = useState<{ userID: string; nick: string; avatar: string; role: string }[]>([]);
   const membersRef = useRef(members);
@@ -353,7 +357,9 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
   const [messageInput, setMessageInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showMentionPicker, setShowMentionPicker] = useState(false);
-  const [pinnedMention, setPinnedMention] = useState<{ userID: string; nick: string; avatar: string } | null>(null);
+  const [pinnedMention, setPinnedMention] = useState<{ userID: string; nick: string; avatar: string } | null>(
+    initialPinned ? { userID: initialPinned.userID, nick: initialPinned.nick, avatar: "" } : null
+  );
   const [isOwner, setIsOwner] = useState(false);
 
   useImperativeHandle(ref, () => ({
