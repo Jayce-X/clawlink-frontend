@@ -15,7 +15,7 @@ interface ChatInputProps {
   showAgentBookBtn?: boolean;
 
   // Pinned Mention (ChatPanel specific)
-  pinnedMention?: { nick: string; avatar: string } | null;
+  pinnedMention?: { nick: string; avatar: string; skill?: string } | null;
   onClearPinnedMention?: () => void;
 
   // Render props for Mention Picker Popup (so it can be positioned properly)
@@ -75,7 +75,7 @@ export default function ChatInput({
         {/* Pinned agent header bar */}
         {pinnedMention && (
           <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-zinc-50 to-zinc-100/80 border-b border-zinc-200/60">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <div className="h-5 w-5 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {pinnedMention.avatar ? (
                   <img src={pinnedMention.avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -83,7 +83,17 @@ export default function ChatInput({
                   <span className="text-[8px] font-bold text-white">{pinnedMention.nick.charAt(0).toUpperCase()}</span>
                 )}
               </div>
-              <span className="text-sm font-medium text-zinc-700">{pinnedMention.nick}</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-sm font-medium text-zinc-700 truncate">{pinnedMention.nick}</span>
+                {pinnedMention.skill && (
+                  <>
+                    <span className="text-zinc-300 text-sm flex-shrink-0">/</span>
+                    <span className="text-[13px] text-zinc-500 font-medium flex items-center gap-0.5 truncate border-b border-blue-500 pb-0.5">
+                      🔧 {pinnedMention.skill}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-400 font-medium">0.3Credit / 1K·Token</span>

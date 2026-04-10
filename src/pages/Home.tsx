@@ -45,47 +45,8 @@ export default function Home() {
   const [inputText, setInputText] = useState("");
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const [mentionPreQuery, setMentionPreQuery] = useState("");
-  const [showAgentBook, setShowAgentBook] = useState(false);
-  const [panelAgents, setPanelAgents] = useState<SearchResult[]>([]);
-  const [panelLoading, setPanelLoading] = useState(false);
-  const [panelSelectedTag, setPanelSelectedTag] = useState<string | null>(null);
-  const [panelPage, setPanelPage] = useState(1);
-  const PANEL_PAGE_SIZE = 5;
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const tagBarRef = useRef<HTMLDivElement>(null);
-
-  // Load agents from search API when Agent Book is opened
-  const loadPanelAgents = useCallback(async (query: string) => {
-    setPanelLoading(true);
-    try {
-      const res = await fetch(`/auth-api/api/agents/search?q=${encodeURIComponent(query)}&top_k=10`);
-      if (!res.ok) throw new Error(`Search error: ${res.status}`);
-      const data: SearchResponse = await res.json();
-      setPanelAgents(data.results || []);
-    } catch (err) {
-      console.error('[Home Panel] load failed:', err);
-      setPanelAgents([]);
-    } finally {
-      setPanelLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (showAgentBook && panelAgents.length === 0) {
-      loadPanelAgents("agent");
-    }
-  }, [showAgentBook]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handlePanelTagClick = useCallback((tag: string) => {
-    setPanelPage(1);
-    if (panelSelectedTag === tag) {
-      setPanelSelectedTag(null);
-      loadPanelAgents("agent");
-      return;
-    }
-    setPanelSelectedTag(tag);
-    loadPanelAgents(tag);
-  }, [panelSelectedTag, loadPanelAgents]);
 
   // Handle send: extract @-mentioned agents, navigate to chat to create group
   const handleSend = useCallback(() => {
@@ -102,13 +63,12 @@ export default function Home() {
     });
   }, [inputText, navigate]);
 
-  // Handle "@ Try" from AgentBook Panel
+  // Handle "@ Try" from bottom grid
   const handleTryAgent = useCallback((agentName: string) => {
     setInputText((prev) => {
       const trimmed = prev.trimEnd();
       return trimmed ? `${trimmed} @${agentName} ` : `@${agentName} `;
     });
-    // Keep Agent Book open so user can add more agents
     setTimeout(() => {
       inputRef.current?.focus();
     }, 50);
@@ -142,7 +102,6 @@ export default function Home() {
     const isTypingNewAt = newValue.slice(-1) === '@' && newValue.length > inputText.length;
     if (isTypingNewAt) {
       setShowMentionPicker(true);
-      setShowAgentBook(false); // hide huge panel if open
     }
     
     // If picker is open, calculate search query from text before AND after @
@@ -184,7 +143,16 @@ export default function Home() {
             onChange={handleInputChange}
             onSend={handleSend}
             showAgentBookBtn={true}
-            onOpenAgentBook={() => setShowAgentBook(!showAgentBook)}
+            popupDirection="down"
+            onOpenAgentBook={() => {
+              if (!showMentionPicker) {
+                setShowMentionPicker(true);
+                setMentionPreQuery("");
+                setTimeout(() => inputRef.current?.focus(), 50);
+              } else {
+                setShowMentionPicker(false);
+              }
+            }}
             popupNode={
               showMentionPicker ? (
                 <MentionPickerPopup
@@ -198,163 +166,6 @@ export default function Home() {
         </motion.div>
       </div>
 
-      {/* Agent Book Expanded Panel */}
-      <AnimatePresence>
-        {showAgentBook && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="max-w-4xl mx-auto px-4 pb-12">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-2xl font-bold text-zinc-900">
-                  Select expert agents and skills
-                </h2>
-                <button
-                  onClick={() => setShowAgentBook(false)}
-                  className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Tag Bar */}
-              <div className="flex gap-2 flex-wrap mb-6">
-                {SEARCH_TAGS.map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => handlePanelTagClick(tag)}
-                    className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      panelSelectedTag === tag
-                        ? "bg-zinc-900 text-white"
-                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-
-              {/* Agent Cards */}
-              {panelLoading ? (
-                <div className="flex items-center justify-center py-16 text-zinc-400">
-                  <div className="flex items-center gap-3">
-                    <div className="h-5 w-5 rounded-full border-2 border-zinc-300 border-t-indigo-500 animate-spin" />
-                    Loading agents...
-                  </div>
-                </div>
-              ) : panelAgents.length === 0 ? (
-                <div className="flex items-center justify-center py-16 text-zinc-400 text-sm">
-                  暂无匹配的 Agent
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {panelAgents.slice((panelPage - 1) * PANEL_PAGE_SIZE, panelPage * PANEL_PAGE_SIZE).map((agent, index) => (
-                    <motion.div
-                      key={agent.agent_id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.03 }}
-                      className="rounded-2xl bg-zinc-50 border border-zinc-200/80 p-6 hover:shadow-sm transition-shadow"
-                    >
-                      {/* Top row: emoji name / skill + breathing dot + version */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-base">🤖</span>
-                          <span className="text-[15px] font-bold text-zinc-900 truncate">
-                            {agent.name}
-                          </span>
-                          <span className="text-zinc-300 text-sm">/</span>
-                          <span className="text-[13px] text-zinc-500 flex items-center gap-0.5 truncate">
-                            🔧 {agent.skills?.[0]?.name || "general"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="relative flex h-2.5 w-2.5 flex-shrink-0 ml-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
-                          </span>
-                          <span className="text-[11px] text-zinc-400 font-mono">{agent.version || ""}</span>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      <p className="text-[13px] text-zinc-500 leading-relaxed mb-3">
-                        {agent.description}
-                      </p>
-
-                      {/* Footer: owner + stars + credits + calls + @ Try */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-5">
-                          {/* Owner */}
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[12px] text-zinc-400">owner:</span>
-                            <img
-                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(agent.provider?.name || agent.agent_id)}&backgroundColor=b6e3f4`}
-                              alt=""
-                              className="h-5 w-5 rounded-full"
-                              referrerPolicy="no-referrer"
-                            />
-                            <span className="text-[12px] font-medium text-zinc-700">
-                              {agent.provider?.name || "Unknown"}
-                            </span>
-                          </div>
-                          {/* Stars */}
-                          <span className="flex items-center gap-1 text-[12px] text-amber-500 font-medium">
-                            <Star className="h-3.5 w-3.5" /> {formatStars(agent.stars || 0)}
-                          </span>
-                          {/* Credits */}
-                          <span className="text-[11px] text-zinc-400">
-                            0.3 Credit / 1K·Token
-                          </span>
-                          {/* Calls */}
-                          <span className="text-[11px] text-zinc-400">
-                            12.5K Calls
-                          </span>
-                        </div>
-                        {/* Try button */}
-                        <button
-                          onClick={() => handleTryAgent(agent.agent_id)}
-                          className="px-5 py-1.5 rounded-md text-xs font-semibold bg-zinc-900 text-white hover:bg-zinc-800 transition-colors"
-                        >
-                          @ Try
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-
-              {/* Pagination */}
-              {panelAgents.length > PANEL_PAGE_SIZE && (
-                <div className="flex items-center justify-center gap-4 pt-6 pb-2">
-                  <button
-                    disabled={panelPage <= 1}
-                    onClick={() => setPanelPage((p) => p - 1)}
-                    className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  >
-                    ← Previous
-                  </button>
-                  <span className="text-sm text-zinc-500">
-                    {panelPage} / {Math.ceil(panelAgents.length / PANEL_PAGE_SIZE)}
-                  </span>
-                  <button
-                    disabled={panelPage >= Math.ceil(panelAgents.length / PANEL_PAGE_SIZE)}
-                    onClick={() => setPanelPage((p) => p + 1)}
-                    className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  >
-                    Next →
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ─── Bottom of first fold: Onboarding ─── */}
       <motion.div

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
+import { X, AlertCircle } from "lucide-react";
 import { useTIM } from "../../contexts/TIMContext";
 import {
   getConversationList, getChannelList,
@@ -30,6 +32,15 @@ export default function ChatLayout() {
   // No more sidebar tab — single conversation list
   const [conversations, setConversations] = useState<TIMConversation[]>([]);
   const [loadingConvs, setLoadingConvs] = useState(true);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
+  // Auto clear global error after 3s
+  useEffect(() => {
+    if (globalError) {
+      const t = setTimeout(() => setGlobalError(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [globalError]);
 
   // Track the _ts of the last handled createGroup state to allow repeated sends
   const lastHandledTs = useRef<number>(0);
@@ -143,7 +154,7 @@ export default function ChatLayout() {
       } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : JSON.stringify(err);
         console.error("[CreateGroup] FAILED:", err);
-        alert(`创建群聊失败: ${errMsg}`);
+        setGlobalError(`创建群聊失败: ${errMsg}`);
       }
     }
 
@@ -243,6 +254,16 @@ export default function ChatLayout() {
     navigate("/chat", { replace: true });
   }, [navigate]);
 
+  // ── Delete Conversation handler ──────────────────────────
+  const handleDeleteConversation = useCallback((convId: string) => {
+    // If the currently active conversation is deleted, navigate away
+    if (convId === activeConversationId) {
+      navigate("/chat", { replace: true });
+    }
+    // Optimistically remove from state
+    setConversations((prev) => prev.filter((c) => c.conversationID !== convId));
+  }, [activeConversationId, navigate]);
+
   // ── Agent Book page (sidebar button) ────────────────────
   const [agentBookOpen, setAgentBookOpen] = useState(false);
   const [agentBookInitialQuery, setAgentBookInitialQuery] = useState<string | undefined>(undefined);
@@ -306,7 +327,7 @@ export default function ChatLayout() {
         }, 50);
       } catch (err: any) {
         console.error('[AgentBook] ❌ Failed to add agent to group:', err?.code, err?.message, err);
-        alert(`添加 Agent 失败: ${err?.message || err?.code || '未知错误'}`);
+        setGlobalError("你没有权限直接拉取该agent入群，请仔细阅读该agent添加条件");
       }
       return;
     }
@@ -321,6 +342,24 @@ export default function ChatLayout() {
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-white overflow-hidden relative">
+      {/* ─── Global Error Toast ─── */}
+      <AnimatePresence>
+        {globalError && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="absolute top-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-3 rounded-lg bg-zinc-900 shadow-xl flex items-center gap-3 border border-zinc-800"
+          >
+            <AlertCircle className="h-4 w-4 text-red-400" />
+            <span className="text-sm font-medium text-white">{globalError}</span>
+            <button onClick={() => setGlobalError(null)} className="ml-2 text-zinc-400 hover:text-white transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 1. Sidebar: ChatGPT-style conversation list */}
       <ConversationList
         conversations={conversations}
@@ -329,6 +368,7 @@ export default function ChatLayout() {
         onSelect={handleSelectConversation}
         onNewChat={handleNewChat}
         onAgentBook={() => openAgentBook()}
+        onDeleteConversation={handleDeleteConversation}
         loading={loadingConvs}
       />
 
@@ -345,6 +385,7 @@ export default function ChatLayout() {
           conversation={activeConversation}
           onStartDM={handleStartDM}
           onOpenAgentBook={() => openDrawer()}
+          onError={setGlobalError}
         />
       ) : (
         <NewChatPanel

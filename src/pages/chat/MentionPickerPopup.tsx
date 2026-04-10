@@ -44,32 +44,46 @@ export default function MentionPickerPopup({
   const [loading, setLoading] = useState(false);
   const popupRef = React.useRef<HTMLDivElement>(null);
 
-  // Fetch agents whenever preQuery changes
+  // Fetch agents whenever preQuery changes (debounced)
   useEffect(() => {
     let isSubscribed = true;
     const query = preQuery.trim() || "agent";
     
-    setLoading(true);
-    fetch(`/auth-api/api/agents/search?q=${encodeURIComponent(query)}&top_k=10`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (isSubscribed) {
-          setAgents(data.results || []);
-        }
+    // Abort controller for timeout
+    const controller = new AbortController();
+
+    // Debounce: wait 300ms after the last keystroke before fetching
+    const debounceId = setTimeout(() => {
+      setLoading(true);
+      fetch(`/auth-api/api/agents/search?q=${encodeURIComponent(query)}&top_k=10`, {
+        signal: controller.signal,
       })
-      .catch((err) => {
-        if (isSubscribed) {
-          console.error("[MentionPicker] Failed:", err);
-        }
-      })
-      .finally(() => {
-        if (isSubscribed) {
-          setLoading(false);
-        }
-      });
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then((data) => {
+          if (isSubscribed) {
+            setAgents(data.results || []);
+          }
+        })
+        .catch((err) => {
+          if (isSubscribed && err.name !== 'AbortError') {
+            console.error("[MentionPicker] Failed:", err);
+            setAgents([]);
+          }
+        })
+        .finally(() => {
+          if (isSubscribed) {
+            setLoading(false);
+          }
+        });
+    }, 300);
       
     return () => {
       isSubscribed = false;
+      clearTimeout(debounceId);
+      controller.abort();
     };
   }, [preQuery]);
 
@@ -176,11 +190,14 @@ export default function MentionPickerPopup({
           </div>
         ) : (
           <div className="flex flex-col pb-2">
-            {agents.map((agent) => (
+            {agents.map((agent, index) => (
               <div
                 key={agent.agent_id}
-                className="border-b border-zinc-200 last:border-b-0 bg-white hover:bg-zinc-50 px-5 py-4 transition-colors"
+                className="relative bg-white hover:bg-zinc-50 px-5 py-4 transition-colors"
               >
+                {index !== agents.length - 1 && (
+                  <div className="absolute bottom-0 left-5 right-5 h-[1px] bg-zinc-200/80" />
+                )}
                 {/* Top row: name / skill + stats + Try */}
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5 min-w-0">

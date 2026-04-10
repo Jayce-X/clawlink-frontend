@@ -13,6 +13,7 @@ interface Props {
   onSelect: (conv: TIMConversation) => void;
   onNewChat: () => void;
   onAgentBook: () => void;
+  onDeleteConversation?: (convId: string) => void;
   loading?: boolean;
 }
 
@@ -40,10 +41,12 @@ function ConversationRow({
   conv,
   isActive,
   onSelect,
+  onDelete,
 }: {
   conv: TIMConversation;
   isActive: boolean;
   onSelect: () => void;
+  onDelete?: (convId: string) => void;
 }) {
   const name = getConversationName(conv);
   const unread = conv.unreadCount || 0;
@@ -78,6 +81,7 @@ function ConversationRow({
           try {
             const chat = getChatSDK();
             await chat.deleteConversation(conv.conversationID);
+            if (onDelete) onDelete(conv.conversationID);
             // Re-render is handled by TIM SDK firing CONVERSATION_LIST_UPDATED event automatically
           } catch (err) {
             console.error("Failed to delete conversation:", err);
@@ -99,6 +103,7 @@ export default function ConversationList({
   onSelect,
   onNewChat,
   onAgentBook,
+  onDeleteConversation,
   loading = false,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,8 +172,9 @@ export default function ConversationList({
                 <ConversationRow
                   key={conv.conversationID}
                   conv={conv}
-                  isActive={conv.conversationID === activeConversationId}
+                  isActive={activeConversationId === conv.conversationID}
                   onSelect={() => onSelect(conv)}
+                  onDelete={onDeleteConversation}
                 />
               ))}
             </div>

@@ -16,6 +16,7 @@ interface Props {
   conversation: TIMConversation;
   onStartDM?: (member: { userID: string; nick: string; avatar: string }) => void;
   onOpenAgentBook?: () => void;
+  onError?: (message: string) => void;
 }
 
 // ── Convert TIM message to HubMessage ───────────────────────
@@ -341,7 +342,7 @@ export interface ChatPanelHandle {
   hasMemberLocally: (userID: string) => boolean;
 }
 
-const ChatPanel = forwardRef<ChatPanelHandle, Props>(function ChatPanel({ conversation, onStartDM, onOpenAgentBook }, ref) {
+const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) => void }>(function ChatPanel({ conversation, onStartDM, onOpenAgentBook, onError }, ref) {
   const [messages, setMessages] = useState<HubMessage[]>([]);
   const [members, setMembers] = useState<{ userID: string; nick: string; avatar: string; role: string }[]>([]);
   const membersRef = useRef(members);
@@ -601,7 +602,14 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props>(function ChatPanel({ conver
       let sentResult;
       if (isGroup) {
         if (pinnedMention) {
-          sentResult = await sendTextAtMessage(targetId, finalText, [pinnedMention.userID]);
+          try {
+            sentResult = await sendTextAtMessage(targetId, finalText, [pinnedMention.userID]);
+          } catch (atErr) {
+            // Fallback: if @mention message fails (e.g. SDK hasn't synced the new member yet),
+            // send as a regular text message instead
+            console.warn('[ChatPanel] sendTextAtMessage failed, falling back to sendTextMessage:', atErr);
+            sentResult = await sendTextMessage(targetId, finalText);
+          }
         } else {
           sentResult = await sendTextMessage(targetId, finalText);
         }
@@ -789,7 +797,12 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props>(function ChatPanel({ conver
                         }
                         return prev;
                       });
-                      setPinnedMention({ userID: agent.agent_id, nick: agent.name, avatar: agent.avatar_url || "" });
+                      setPinnedMention({ 
+                        userID: agent.agent_id, 
+                        nick: agent.name, 
+                        avatar: agent.avatar_url || "",
+                        skill: agent.skills?.[0]?.name || "general",
+                      });
                       setMembers((prev) => {
                         const existing = prev.find(m => m.userID === agent.agent_id);
                         if (existing) return prev;
@@ -797,6 +810,8 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props>(function ChatPanel({ conver
                       });
                     } catch (err: any) {
                       console.error('[MentionPicker] Add agent failed:', err);
+                      if (onError) onError("你没有权限直接拉取该agent入群，请仔细阅读该agent添加条件");
+                      else alert("你没有权限直接拉取该agent入群，请仔细阅读该agent添加条件");
                     }
                   }}
                   onClose={() => setShowMentionPicker(false)}
@@ -847,7 +862,8 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props>(function ChatPanel({ conver
                 timestamp: new Date().toISOString()
               }]);
              } catch (e: any) {
-               alert("移出失败: " + e.message);
+               if (onError) onError("移出失败: " + e.message);
+               else alert("移出失败: " + e.message);
              }
           }}
         />
