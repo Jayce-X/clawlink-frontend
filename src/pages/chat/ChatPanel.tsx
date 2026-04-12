@@ -689,7 +689,7 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
         ) : (
           <div
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto pl-5 pr-16 py-4 space-y-4 bg-white"
+            className="flex-1 overflow-y-auto px-5 pt-14 pb-4 space-y-4 bg-white"
           >
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-zinc-400 text-sm gap-2">
