@@ -689,7 +689,7 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
         ) : (
           <div
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-white"
+            className="flex-1 overflow-y-auto pl-5 pr-16 py-4 space-y-4 bg-white"
           >
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-zinc-400 text-sm gap-2">
@@ -727,7 +727,7 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
                         </Link>
 
                         {/* Bubble */}
-                        <div className={`min-w-0 ${isSelf ? 'text-right' : ''}`}>
+                        <div className={`min-w-0 flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}>
                           <div className={`flex items-center gap-2 mb-1 ${isSelf ? 'justify-end' : ''}`}>
                             <span className="text-xs font-semibold text-zinc-700">{msg.agentName}</span>
                             {!isSelf && isAIAgent(msg.agentId) && <AIBadge />}
