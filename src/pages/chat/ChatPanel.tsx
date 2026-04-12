@@ -26,6 +26,17 @@ function timMsgToHub(msg: any): HubMessage | null {
     return null;
   }
 
+  // Filter out TIM's auto-generated group creation notification
+  // It arrives as TIMCustomElem with businessID="group_create" inside payload.data
+  if (msg.type === TIM_TYPES.MSG_CUSTOM && msg.payload?.data) {
+    try {
+      const customData = JSON.parse(msg.payload.data);
+      if (customData.businessID === 'group_create') {
+        return null;
+      }
+    } catch { /* not JSON, proceed normally */ }
+  }
+
   let textContent = "";
 
   // Handle different message types
@@ -361,6 +372,7 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
     initialPinned ? { userID: initialPinned.userID, nick: initialPinned.nick, avatar: "" } : null
   );
   const [isOwner, setIsOwner] = useState(false);
+  const [myUserID, setMyUserID] = useState("");
 
   useImperativeHandle(ref, () => ({
     appendAgentMention(nameOrId: string, avatarUrl: string = "") {
@@ -465,6 +477,7 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
           if (cancelled) return;
 
           const myUserID = myProfileRes?.data?.userID || "";
+          setMyUserID(myUserID);
           
           setIsOwner(profile?.ownerID === myUserID);
 
@@ -692,50 +705,57 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
                     </span>
                   </div>
                 ) : (
-                  <div key={msg.id} className="flex items-start gap-3 group">
-                  {/* Avatar */}
-                  <Link
-                    to={`/profile/${msg.agentId}`}
-                    className="flex-shrink-0"
-                  >
-                    <div className={`h-9 w-9 overflow-hidden flex items-center justify-center ${
-                      isAIAgent(msg.agentId) ? "rounded-lg bg-gradient-to-br from-indigo-100 to-violet-100" : "rounded-full bg-gradient-to-br from-zinc-300 to-zinc-200"
-                    }`}>
-                      <img
-                        src={msg.avatarUrl || getMockAvatar(msg.agentId, isAIAgent(msg.agentId))}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                  </Link>
+                  (() => {
+                    const isSelf = msg.agentId === myUserID;
+                    return (
+                      <div key={msg.id} className={`flex items-start gap-3 group ${isSelf ? 'flex-row-reverse' : ''}`}>
+                        {/* Avatar */}
+                        <Link
+                          to={`/profile/${msg.agentId}`}
+                          className="flex-shrink-0"
+                        >
+                          <div className={`h-9 w-9 overflow-hidden flex items-center justify-center ${
+                            !isSelf && isAIAgent(msg.agentId) ? "rounded-lg bg-gradient-to-br from-indigo-100 to-violet-100" : "rounded-full bg-gradient-to-br from-zinc-300 to-zinc-200"
+                          }`}>
+                            <img
+                              src={msg.avatarUrl || getMockAvatar(msg.agentId, isAIAgent(msg.agentId))}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        </Link>
 
-                  {/* Bubble */}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold text-zinc-700">{msg.agentName}</span>
-                      {isAIAgent(msg.agentId) && <AIBadge />}
-                      <span className="text-[10px] text-zinc-400">{formatTime(msg.timestamp)}</span>
-                    </div>
-                    <div className="inline-block rounded-xl rounded-tl-sm bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-800 leading-relaxed max-w-[420px] whitespace-pre-wrap break-words">
-                      {renderMessageContent(msg.content)}
-                    </div>
-                    {/* Reactions */}
-                    {msg.reactions && msg.reactions.length > 0 && (
-                      <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                        {msg.reactions.map((r, ri) => (
-                          <span
-                            key={ri}
-                            className="inline-flex items-center gap-1 rounded-full bg-white border border-zinc-200 px-2 py-0.5 text-xs text-zinc-600"
-                          >
-                            <span>{r.emoji === "claw" ? "🐾" : r.emoji}</span>
-                            <span className="font-medium">{r.count}</span>
-                          </span>
-                        ))}
+                        {/* Bubble */}
+                        <div className={`min-w-0 ${isSelf ? 'text-right' : ''}`}>
+                          <div className={`flex items-center gap-2 mb-1 ${isSelf ? 'justify-end' : ''}`}>
+                            <span className="text-xs font-semibold text-zinc-700">{msg.agentName}</span>
+                            {!isSelf && isAIAgent(msg.agentId) && <AIBadge />}
+                            <span className="text-[10px] text-zinc-400">{formatTime(msg.timestamp)}</span>
+                          </div>
+                          <div className={`inline-block rounded-xl px-3.5 py-2.5 text-sm text-zinc-800 leading-relaxed max-w-[420px] whitespace-pre-wrap break-words text-left ${
+                            isSelf ? 'rounded-tr-sm bg-zinc-50' : 'rounded-tl-sm bg-zinc-50'
+                          }`}>
+                            {renderMessageContent(msg.content)}
+                          </div>
+                          {/* Reactions */}
+                          {msg.reactions && msg.reactions.length > 0 && (
+                            <div className={`flex items-center gap-1 mt-1.5 flex-wrap ${isSelf ? 'justify-end' : ''}`}>
+                              {msg.reactions.map((r, ri) => (
+                                <span
+                                  key={ri}
+                                  className="inline-flex items-center gap-1 rounded-full bg-white border border-zinc-200 px-2 py-0.5 text-xs text-zinc-600"
+                                >
+                                  <span>{r.emoji === "claw" ? "🐾" : r.emoji}</span>
+                                  <span className="font-medium">{r.count}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
+                    );
+                  })()
               ))
             )}
             <div ref={messagesEndRef} />

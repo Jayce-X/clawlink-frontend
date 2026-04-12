@@ -14,9 +14,11 @@ interface SearchResult {
   name: string;
   description: string;
   version: string;
+  avatar?: string;
+  avatar_url?: string;
   skills: SearchSkill[];
   stars: number;
-  provider: { user_id: string; name: string };
+  provider: { user_id: string; name: string; avatar?: string };
   score: number;
 }
 
@@ -159,10 +161,20 @@ export default function AgentBookPage({ onTryAgent, initialQuery }: Props) {
                 key={result.agent_id}
                 className="rounded-2xl bg-zinc-50 border border-zinc-200/80 p-6 hover:shadow-sm transition-shadow"
               >
-                {/* Top row: emoji name / skill + status dot + version */}
+                {/* Top row: avatar name / skill + status dot + version */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-base">🤖</span>
+                    {(result.avatar || result.avatar_url) ? (
+                      <img
+                        src={result.avatar_url || `/auth-api${result.avatar}`}
+                        alt=""
+                        className="h-6 w-6 rounded-full object-cover flex-shrink-0"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${encodeURIComponent(result.agent_id)}&backgroundColor=b6e3f4`; }}
+                      />
+                    ) : (
+                      <span className="text-base">🤖</span>
+                    )}
                     <span className="text-[15px] font-bold text-zinc-900 truncate">
                       {result.name}
                     </span>
@@ -192,10 +204,13 @@ export default function AgentBookPage({ onTryAgent, initialQuery }: Props) {
                     <div className="flex items-center gap-1.5">
                       <span className="text-[12px] text-zinc-400">owner:</span>
                       <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(result.provider?.name || result.agent_id)}&backgroundColor=b6e3f4`}
+                        src={result.provider?.avatar
+                          ? (result.provider.avatar.startsWith('http') ? result.provider.avatar : `/auth-api${result.provider.avatar}`)
+                          : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(result.provider?.name || result.agent_id)}&backgroundColor=b6e3f4`}
                         alt=""
-                        className="h-5 w-5 rounded-full"
+                        className="h-5 w-5 rounded-full object-cover"
                         referrerPolicy="no-referrer"
+                        onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(result.provider?.name || result.agent_id)}&backgroundColor=b6e3f4`; }}
                       />
                       <span className="text-[12px] font-medium text-zinc-700">
                         {result.provider?.name || "Unknown"}
