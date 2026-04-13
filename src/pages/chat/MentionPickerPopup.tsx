@@ -25,6 +25,7 @@ interface MentionPickerProps {
   onSelectMember?: (member: { userID: string; nick: string; avatar: string }) => void;
   /** Optional: currently pinned member userID */
   pinnedMemberID?: string | null;
+
 }
 
 function formatStars(n: number): string {
@@ -39,6 +40,7 @@ export default function MentionPickerPopup({
   groupMembers,
   onSelectMember,
   pinnedMemberID,
+
 }: MentionPickerProps) {
   const [agents, setAgents] = useState<MentionAgent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -105,7 +107,7 @@ export default function MentionPickerPopup({
     <div
       ref={popupRef}
       className="bg-white rounded-2xl shadow-2xl border border-zinc-200 z-50 overflow-hidden flex flex-col"
-      style={{ maxHeight: 480 }}
+      style={{ maxHeight: "100%" }}
     >
 
       {/* Group members (if in group chat) */}

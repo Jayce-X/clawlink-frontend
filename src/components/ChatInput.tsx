@@ -1,5 +1,46 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Plus, ArrowUp, ThumbsUp, XCircle, Loader2 } from "lucide-react";
+
+// Popup container that dynamically constrains height to available viewport space
+function PopupContainer({ direction, children }: { direction: "up" | "down"; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [maxH, setMaxH] = useState<number>(400);
+
+  const recalc = useCallback(() => {
+    if (!ref.current) return;
+    const rect = ref.current.parentElement?.getBoundingClientRect();
+    if (!rect) return;
+    // Account for navbar (~64px) + breathing room
+    const margin = direction === "up" ? 80 : 24;
+    if (direction === "up") {
+      setMaxH(rect.top - margin);
+    } else {
+      setMaxH(window.innerHeight - rect.bottom - margin);
+    }
+  }, [direction]);
+
+  useEffect(() => {
+    recalc();
+    window.addEventListener("resize", recalc);
+    const raf = requestAnimationFrame(recalc);
+    return () => {
+      window.removeEventListener("resize", recalc);
+      cancelAnimationFrame(raf);
+    };
+  }, [recalc]);
+
+  return (
+    <div
+      ref={ref}
+      className={`absolute left-0 right-0 z-50 ${
+        direction === "up" ? "bottom-full mb-2" : "top-full mt-2"
+      }`}
+      style={{ maxHeight: Math.max(maxH, 120), overflow: "hidden", borderRadius: 16 }}
+    >
+      {children}
+    </div>
+  );
+}
 
 interface ChatInputProps {
   value: string;
@@ -57,13 +98,9 @@ export default function ChatInput({
     <div className="relative w-full">
       {/* Absolute positioned popup (e.g., Mention Picker) */}
       {popupNode && (
-        <div 
-          className={`absolute left-0 right-0 z-50 ${
-            popupDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"
-          }`}
-        >
+        <PopupContainer direction={popupDirection}>
           {popupNode}
-        </div>
+        </PopupContainer>
       )}
 
       {/* Main input container */}

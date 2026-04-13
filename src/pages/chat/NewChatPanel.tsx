@@ -132,7 +132,7 @@ const NewChatPanel = forwardRef<NewChatPanelHandle, NewChatPanelProps>(function 
             onSend={handleSend}
             showAgentBookBtn={true}
             onOpenAgentBook={() => onOpenAgentBook?.(inputText.trim() || undefined)}
-            popupDirection="down"
+            popupDirection="up"
             popupNode={
               showMentionPicker ? (
                 <MentionPickerPopup

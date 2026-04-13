@@ -158,7 +158,7 @@ export default function Home() {
             onChange={handleInputChange}
             onSend={handleSend}
             showAgentBookBtn={true}
-            popupDirection="down"
+            popupDirection="up"
             onOpenAgentBook={() => {
               if (!showMentionPicker) {
                 setShowMentionPicker(true);
