@@ -160,8 +160,8 @@ export default function ChatInput({
                 {pinnedMention.skill && (
                   <>
                     <span className="text-zinc-300 text-sm flex-shrink-0">/</span>
-                    <span className="text-[13px] text-zinc-500 font-medium flex items-center gap-0.5 truncate border-b border-blue-500 pb-0.5">
-                      🔧 {pinnedMention.skill}
+                    <span className="text-[13px] text-zinc-500 font-medium truncate">
+                      {pinnedMention.skill}
                     </span>
                   </>
                 )}
