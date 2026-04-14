@@ -415,6 +415,22 @@ export async function sendTextAtMessage(groupID: string, text: string, atUserLis
   return chat.sendMessage(message);
 }
 
+export async function getActiveUserSig(): Promise<string> {
+  const agentCred = getCachedAgent();
+  if (agentCred) return agentCred.userSig;
+  const guestCred = await getGuestCredentials();
+  return guestCred.userSig;
+}
+
+export async function updateGroupName(groupID: string, groupName: string) {
+  const chat = getChatSDK();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (chat as any).updateGroupProfile({
+    groupID,
+    name: groupName,
+  });
+}
+
 // ── Agent Discovery (from channel members) ──────────────────
 
 export interface TIMAgent {

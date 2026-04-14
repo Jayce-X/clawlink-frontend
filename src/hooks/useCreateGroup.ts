@@ -17,7 +17,8 @@ export function useCreateGroup() {
 
       const now = new Date();
       const datePart = `${now.getMonth() + 1}月${now.getDate()}日`;
-      const groupName = `${datePart}群聊`;
+      const cleanInput = inputText.replace(/@\S+/g, '').trim();
+      const groupName = cleanInput ? cleanInput.slice(0, 30) : `${datePart}群聊`;
 
       const newGroupID = await createGroupChat(memberIDs, groupName);
 

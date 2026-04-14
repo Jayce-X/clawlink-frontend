@@ -5,9 +5,10 @@ import {
   getChannelMessages, getChannelMembers, getChannelProfile,
   getC2CMessages, sendTextMessage, sendC2CTextMessage, sendTextAtMessage,
   joinChannel, getUserProfiles, addMembersToGroup, removeMembersFromGroup,
-  getChatSDK, TIM_EVENT, TIM_TYPES,
+  getChatSDK, TIM_EVENT, TIM_TYPES, updateGroupName,
   type TIMConversation,
 } from "../../services/timService";
+import { generateConversationTitle } from "../../services/titleService";
 import type { HubMessage, HubReaction } from "../../types";
 import MentionPickerPopup, { type MentionAgent } from "./MentionPickerPopup";
 import ChatInput from "../../components/ChatInput";
@@ -374,6 +375,14 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
   const [isOwner, setIsOwner] = useState(false);
   const [myUserID, setMyUserID] = useState("");
 
+  const titleGeneratedFirstRef = useRef(false);
+  const titleGeneratedTenthRef = useRef(false);
+
+  useEffect(() => {
+    titleGeneratedFirstRef.current = false;
+    titleGeneratedTenthRef.current = false;
+  }, [conversation.conversationID]);
+
   useImperativeHandle(ref, () => ({
     appendAgentMention(nameOrId: string, avatarUrl: string = "") {
       // First append text fallback
@@ -587,7 +596,48 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
             agentName: nickCacheRef.current[m.agentId] || m.agentName,
             avatarUrl: avatarCacheRef.current[m.agentId] || m.avatarUrl || "",
           }));
-        setMessages((prev) => [...prev, ...hubMsgs]);
+
+        setMessages((prev) => {
+          const updated = [...prev, ...hubMsgs];
+          
+          if (isGroup) {
+            const priorAITalkCount = prev.filter(m => m.type !== 'system' && isAIAgent(m.agentId)).length;
+            const newAITalks = hubMsgs.some(m => m.type !== 'system' && isAIAgent(m.agentId));
+            const totalConversations = updated.filter(m => m.type !== 'system').length;
+
+            const triggerTitleGeneration = async (currentMsgs: HubMessage[]) => {
+              const messagesForAPI = currentMsgs
+                .filter(m => m.type !== 'system')
+                .slice(-20)
+                .map(m => ({
+                  role: isAIAgent(m.agentId) ? "assistant" : "user",
+                  content: m.content
+                }));
+          
+              if (messagesForAPI.length === 0) return;
+          
+              try {
+                const generatedTitle = await generateConversationTitle(messagesForAPI);
+                if (generatedTitle) {
+                   await updateGroupName(targetId, generatedTitle);
+                   setHeaderInfo(prevHeader => prevHeader ? { ...prevHeader, name: generatedTitle } : null);
+                }
+              } catch (err) {
+                console.error("Title generation trigger failed:", err);
+              }
+            };
+
+            if (priorAITalkCount === 0 && newAITalks && !titleGeneratedFirstRef.current) {
+              titleGeneratedFirstRef.current = true;
+              triggerTitleGeneration(updated);
+            } else if (totalConversations >= 10 && !titleGeneratedTenthRef.current) {
+              titleGeneratedTenthRef.current = true;
+              triggerTitleGeneration(updated);
+            }
+          }
+          
+          return updated;
+        });
       }
     };
 
