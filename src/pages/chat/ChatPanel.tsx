@@ -734,7 +734,7 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
                             {!isSelf && isAIAgent(msg.agentId) && <AIBadge />}
                             <span className="text-[10px] text-zinc-400">{formatTime(msg.timestamp)}</span>
                           </div>
-                          <div className={`inline-block rounded-xl px-3.5 py-2.5 text-sm text-zinc-800 leading-relaxed max-w-[420px] whitespace-pre-wrap break-words text-left ${
+                          <div className={`inline-block rounded-xl px-4 py-3 text-[15px] text-zinc-800 leading-relaxed max-w-[700px] whitespace-pre-wrap break-words text-left ${
                             isSelf ? 'rounded-tr-sm bg-zinc-50' : 'rounded-tl-sm bg-zinc-50'
                           }`}>
                             {renderMessageContent(msg.content)}
