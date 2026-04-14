@@ -110,63 +110,7 @@ export default function MentionPickerPopup({
       style={{ maxHeight: "100%" }}
     >
 
-      {/* Group members (if in group chat) */}
-      {groupMembers && groupMembers.length > 0 && (
-        <div className="border-b border-zinc-100 flex-shrink-0">
-          <div className="px-5 pt-3 pb-1.5 flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">
-              群内成员
-            </span>
-            <span className="text-[10px] text-zinc-300">
-              {groupMembers.length} 人
-            </span>
-          </div>
-          <div className="px-4 pb-3 overflow-x-auto">
-            <div
-              className="grid grid-rows-2 grid-flow-col gap-1.5"
-              style={{ minWidth: "max-content" }}
-            >
-              {groupMembers.map((m) => (
-                <button
-                  key={m.userID}
-                  onClick={() => onSelectMember?.(m)}
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors text-left whitespace-nowrap ${
-                    pinnedMemberID === m.userID
-                      ? "bg-indigo-50 ring-1 ring-indigo-200"
-                      : "hover:bg-zinc-50"
-                  }`}
-                  style={{ minWidth: 160 }}
-                >
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-zinc-400 to-zinc-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {m.avatar ? (
-                      <img
-                        src={m.avatar}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <span className="text-[8px] font-bold text-white">
-                        {(m.nick || m.userID).charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs text-zinc-700 truncate max-w-[110px]">
-                      {m.nick || m.userID}
-                    </div>
-                  </div>
-                  {m.role === "Owner" && (
-                    <span className="text-[9px] text-amber-600 font-medium">
-                      群主
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Group members section removed per user request */}
 
       {/* Agent list */}
       <div className="flex-1 overflow-y-auto">
