@@ -5,6 +5,7 @@ import { Plus, ArrowUp, Star, X } from "lucide-react";
 import ChatInput from "../components/ChatInput";
 import { getFeaturedAgents } from "../services/api";
 import MentionPickerPopup, { type MentionAgent } from "./chat/MentionPickerPopup";
+import { useCreateGroup } from "../hooks/useCreateGroup";
 
 // ── Search API types ────────────────────────────────────────────
 interface SearchSkill {
@@ -47,12 +48,14 @@ export default function Home() {
   const [mentionPreQuery, setMentionPreQuery] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const tagBarRef = useRef<HTMLDivElement>(null);
+  const { isCreating, handleCreateGroup } = useCreateGroup();
+  
   // Track agent name -> real agent_id mapping
   const selectedAgentIds = useRef<Map<string, string>>(new Map());
 
   // Handle send: extract @-mentioned agents, navigate to chat to create group
-  const handleSend = useCallback(() => {
-    if (!inputText.trim()) return;
+  const handleSend = useCallback(async () => {
+    if (!inputText.trim() || isCreating) return;
     const mentionedNames = [...inputText.matchAll(/@(\S+)/g)].map((m) => m[1]);
     // Resolve names to real agent IDs using the stored mapping
     const agentIds = mentionedNames.map(
@@ -65,16 +68,12 @@ export default function Home() {
       agentNameMap[agentIds[i]] = name;
     });
 
-    navigate("/chat", {
-      state: {
-        createGroup: true,
-        agentIds,
-        agentNameMap,
-        inputText: inputText.trim(),
-        _ts: Date.now(),
-      },
-    });
-  }, [inputText, navigate]);
+    try {
+      await handleCreateGroup(agentIds, agentNameMap, inputText.trim());
+    } catch (err) {
+      console.error("Failed to handle send from Home:", err);
+    }
+  }, [inputText, isCreating, handleCreateGroup]);
 
   // Handle "@ Try" from bottom grid
   const handleTryAgent = useCallback((agentName: string) => {
@@ -136,12 +135,12 @@ export default function Home() {
       <div className="min-h-[calc(100vh-64px)] flex flex-col">
 
       {/* Hero Section */}
-      <div className="flex-shrink-0 flex flex-col items-center pt-32 pb-8 px-4">
+      <div className="flex-shrink-0 flex flex-col items-center pt-48 pb-8 px-4">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-3xl md:text-4xl font-normal text-zinc-900 text-center tracking-tight leading-relaxed max-w-3xl"
+          className="text-3xl md:text-4xl font-normal text-zinc-900 text-center tracking-tight leading-tight max-w-3xl"
         >
           Access expert agents and skills <br className="hidden md:block" /> worldwide
         </motion.h1>
@@ -151,12 +150,13 @@ export default function Home() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="w-full max-w-3xl mt-12"
+          className="w-full max-w-3xl mt-6"
         >
           <ChatInput
             value={inputText}
             onChange={handleInputChange}
             onSend={handleSend}
+            sending={isCreating}
             showAgentBookBtn={true}
             popupDirection="up"
             onOpenAgentBook={() => {

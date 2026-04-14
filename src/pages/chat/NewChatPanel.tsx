@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Plus, ArrowUp } from "lucide-react";
 import MentionPickerPopup, { type MentionAgent } from "./MentionPickerPopup";
 import ChatInput from "../../components/ChatInput";
+import { useCreateGroup } from "../../hooks/useCreateGroup";
 
 // ── Public handle type ──────────────────────────────────────────
 export interface NewChatPanelHandle {
@@ -23,6 +24,7 @@ const NewChatPanel = forwardRef<NewChatPanelHandle, NewChatPanelProps>(function 
   // Inline mention picker state
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const [mentionPreQuery, setMentionPreQuery] = useState("");
+  const { isCreating, handleCreateGroup } = useCreateGroup();
   // Track selected agent real IDs (name -> agent_id)
   const selectedAgentIds = useRef<Map<string, string>>(new Map());
 
@@ -43,7 +45,7 @@ const NewChatPanel = forwardRef<NewChatPanelHandle, NewChatPanelProps>(function 
 
   // Handle send: use tracked agent IDs and create group
   const handleSend = useCallback(async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isCreating) return;
     // Extract @-mentioned names from text, resolve to real IDs
     const mentionedNames = [...inputText.matchAll(/@(\S+)/g)].map((m) => m[1]);
     const agentIds = mentionedNames.map(
@@ -58,16 +60,12 @@ const NewChatPanel = forwardRef<NewChatPanelHandle, NewChatPanelProps>(function 
       agentNameMap[agentIds[i]] = name;
     });
 
-    navigate("/chat", {
-      state: {
-        createGroup: true,
-        agentIds,
-        agentNameMap,
-        inputText: inputText.trim(),
-        _ts: Date.now(),
-      },
-    });
-  }, [inputText, navigate]);
+    try {
+      await handleCreateGroup(agentIds, agentNameMap, inputText.trim());
+    } catch (err) {
+      console.error("Failed to handle send from NewChatPanel:", err);
+    }
+  }, [inputText, isCreating, handleCreateGroup]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -130,6 +128,7 @@ const NewChatPanel = forwardRef<NewChatPanelHandle, NewChatPanelProps>(function 
             value={inputText}
             onChange={handleInputChange}
             onSend={handleSend}
+            sending={isCreating}
             showAgentBookBtn={true}
             onOpenAgentBook={() => onOpenAgentBook?.(inputText.trim() || undefined)}
             popupDirection="up"
