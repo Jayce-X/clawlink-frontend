@@ -169,10 +169,6 @@ export default function ChatInput({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-400 font-medium">0.3Credit / 1K·Token</span>
-              <span className="text-zinc-200">|</span>
-              <button className="text-zinc-300 hover:text-zinc-500 transition-colors" title="点赞">
-                <ThumbsUp className="h-3.5 w-3.5" />
-              </button>
               <button
                 onClick={onClearPinnedMention}
                 className="text-zinc-300 hover:text-zinc-500 transition-colors"
