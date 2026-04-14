@@ -805,15 +805,7 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
                     try {
                       await addMembersToGroup(targetId, [agent.agent_id]);
                       setShowMentionPicker(false);
-                      // Add system message
-                      setMessages((prev) => [...prev, {
-                        id: `sys-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-                        agentId: "system",
-                        agentName: "System",
-                        content: `✅ 已成功将 ${agent.name} 拉入群聊`,
-                        type: "system",
-                        timestamp: new Date().toISOString()
-                      }]);
+                      // Add system message removed
                       // Append text fallback and pin
                       setMessageInput((prev) => {
                         const lastAtIndex = prev.lastIndexOf("@");

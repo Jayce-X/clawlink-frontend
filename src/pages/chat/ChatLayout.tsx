@@ -294,7 +294,6 @@ export default function ChatLayout() {
         console.log(`[AgentBook] ✅ Added agent ${agentId} to group ${groupID}`);
         setDrawerOpen(false);
         setTimeout(() => {
-          chatPanelRef.current?.addSystemMessage(`✅ 已成功将 ${agentName} 拉入群聊`);
           chatPanelRef.current?.addMemberLocally({ userID: agentId, nick: agentName, avatar: avatarUrl || "", role: "Member" });
           chatPanelRef.current?.appendAgentMention(agentName, avatarUrl);
         }, 50);
