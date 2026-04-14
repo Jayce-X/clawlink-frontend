@@ -689,9 +689,10 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
         ) : (
           <div
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto px-5 pt-14 pb-4 space-y-4 bg-white"
+            className="flex-1 overflow-y-auto bg-white"
           >
-            {messages.length === 0 ? (
+            <div className="max-w-[1024px] mx-auto w-full px-8 pt-14 pb-4 flex flex-col h-full space-y-4">
+              {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-zinc-400 text-sm gap-2">
                 <span className="text-3xl">💬</span>
                 <span>暂无消息</span>
@@ -759,11 +760,12 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
               ))
             )}
             <div ref={messagesEndRef} />
+            </div>
           </div>
         )}
 
         {/* Input bar — styled like reference design */}
-        <div className="relative px-8 py-3 bg-white flex-shrink-0 max-w-[952px] mx-auto w-full">
+        <div className="relative px-8 py-3 bg-white flex-shrink-0 max-w-[1024px] mx-auto w-full">
           <ChatInput
             value={messageInput}
             onChange={(e) => {
