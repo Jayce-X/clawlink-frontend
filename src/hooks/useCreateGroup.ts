@@ -45,18 +45,22 @@ export function useCreateGroup() {
 
       // Timing 1: Generate title asynchronously after navigation (don't block)
       if (inputText) {
-        generateConversationTitle([
-          { role: 'user', content: inputText },
-        ]).then((title) => {
-          if (title) {
-            console.log('[CreateGroup] Generated title:', title);
-            updateGroupName(newGroupID, title).catch((err) => {
-              console.warn('[CreateGroup] Failed to update group name:', err);
-            });
+        // Small delay to let SDK sync the new group before we try to update its profile
+        setTimeout(async () => {
+          try {
+            console.log('[CreateGroup] Calling generateConversationTitle with:', inputText);
+            const title = await generateConversationTitle([
+              { role: 'user', content: inputText },
+            ]);
+            console.log('[CreateGroup] API returned title:', title);
+            if (title) {
+              await updateGroupName(newGroupID, title);
+              console.log('[CreateGroup] ✅ Group name updated to:', title);
+            }
+          } catch (err) {
+            console.error('[CreateGroup] ❌ Title generation/update failed:', err);
           }
-        }).catch((err) => {
-          console.warn('[CreateGroup] Title generation failed:', err);
-        });
+        }, 2000);
       }
     } catch (err) {
       console.error("Failed to create group:", err);
