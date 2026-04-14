@@ -158,6 +158,7 @@ export default function Home() {
             onSend={handleSend}
             sending={isCreating}
             showAgentBookBtn={true}
+            mentionedNames={Array.from(selectedAgentIds.current.keys())}
             popupDirection="up"
             onOpenAgentBook={() => {
               if (!showMentionPicker) {

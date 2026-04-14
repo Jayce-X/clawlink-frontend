@@ -64,15 +64,35 @@ export default function ChatLayout() {
 
     async function load() {
       setLoadingConvs(true);
+      console.log("[ChatLayout] load() started...");
       try {
+        // Race the getConversationList to ensure it doesn't hang indefinitely
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout loading conversations")), 10000)
+        );
+        
+        console.log("[ChatLayout] Calling getConversationList...");
         // Get SDK conversation list
-        let convList = await getConversationList();
+        let convList = await Promise.race([
+          getConversationList(),
+          timeoutPromise
+        ]);
+        console.log("[ChatLayout] getConversationList returned", convList?.length, "items");
 
         // If conversation list is empty (guest just logged in),
         // seed it from the channel list so user sees available groups
         if (convList.length === 0) {
-          const channels = await getChannelList().catch(() => []);
-          const seeded: TIMConversation[] = channels.map((ch) => ({
+          console.log("[ChatLayout] ConvList is empty, seeding from channel list...");
+          const channels = await Promise.race([
+            getChannelList(),
+            timeoutPromise
+          ]).catch((err) => {
+            console.error("[ChatLayout] Seeding channels failed:", err);
+            return [];
+          });
+          console.log("[ChatLayout] Seeding channels returned", channels?.length, "channels");
+          
+          const seeded: TIMConversation[] = channels.map((ch: any) => ({
             conversationID: `GROUP${ch.groupID}`,
             type: TIM_TYPES.CONV_GROUP as string,
             groupID: ch.groupID,
@@ -94,12 +114,18 @@ export default function ChatLayout() {
         }
 
         if (!cancelled) {
+          console.log("[ChatLayout] Setting conversations length:", convList.length);
           setConversations(convList);
         }
       } catch (err) {
-        console.error("Failed to load conversations:", err);
+        console.error("[ChatLayout] Failed to load conversations:", err);
       } finally {
-        if (!cancelled) setLoadingConvs(false);
+        if (!cancelled) {
+          console.log("[ChatLayout] load() finished, setting loadingConvs=false");
+          setLoadingConvs(false);
+        } else {
+          console.log("[ChatLayout] cancelled! Not setting loadingConvs");
+        }
       }
     }
 

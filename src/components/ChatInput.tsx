@@ -62,6 +62,9 @@ interface ChatInputProps {
   // Render props for Mention Picker Popup (so it can be positioned properly)
   popupNode?: React.ReactNode;
   popupDirection?: "up" | "down";
+
+  // Known selected agents for atomic backspace deletion
+  mentionedNames?: string[];
 }
 
 export default function ChatInput({
@@ -78,6 +81,7 @@ export default function ChatInput({
   onClearPinnedMention,
   popupNode,
   popupDirection = "up",
+  mentionedNames = [],
 }: ChatInputProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -86,6 +90,37 @@ export default function ChatInput({
     if (onKeyDown) {
       onKeyDown(e);
       if (e.defaultPrevented) return;
+    }
+
+    const el = e.currentTarget;
+    if (e.key === "Backspace" && el.selectionStart === el.selectionEnd) {
+      const textBeforeCursor = el.value.slice(0, el.selectionStart);
+      // Match the pattern @name right before the cursor
+      const match = textBeforeCursor.match(/@(\S+)$/);
+      if (match) {
+        const name = match[1];
+        if (mentionedNames.includes(name)) {
+          e.preventDefault();
+          const matchFull = match[0];
+          const newStart = el.selectionStart - matchFull.length;
+          const newValue = textBeforeCursor.slice(0, -matchFull.length) + el.value.slice(el.selectionEnd);
+          
+          // Native event stimulation to trigger standard onChange bindings
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLTextAreaElement.prototype,
+            "value"
+          )?.set;
+          nativeInputValueSetter?.call(el, newValue);
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          
+          // Restore cursor
+          setTimeout(() => {
+            el.selectionStart = newStart;
+            el.selectionEnd = newStart;
+          }, 0);
+          return;
+        }
+      }
     }
     
     if (e.key === "Enter" && !e.shiftKey) {

@@ -130,6 +130,7 @@ const NewChatPanel = forwardRef<NewChatPanelHandle, NewChatPanelProps>(function 
             onSend={handleSend}
             sending={isCreating}
             showAgentBookBtn={true}
+            mentionedNames={Array.from(selectedAgentIds.current.keys())}
             onOpenAgentBook={() => onOpenAgentBook?.(inputText.trim() || undefined)}
             popupDirection="up"
             popupNode={
