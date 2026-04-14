@@ -139,7 +139,8 @@ export default function MentionPickerPopup({
             {agents.map((agent, index) => (
               <div
                 key={agent.agent_id}
-                className="relative bg-white hover:bg-zinc-50 px-5 py-4 transition-colors"
+                className="relative bg-white hover:bg-zinc-50 px-5 py-4 transition-colors cursor-pointer"
+                onClick={() => onSelectAgent(agent)}
               >
                 {index !== agents.length - 1 && (
                   <div className="absolute bottom-0 left-5 right-5 h-[1px] bg-zinc-200/80" />
@@ -167,12 +168,11 @@ export default function MentionPickerPopup({
                     <span className="text-[10px] text-zinc-400">
                       12.5K Calls
                     </span>
-                    <button
-                      onClick={() => onSelectAgent(agent)}
-                      className="px-3 py-1 rounded-md text-[11px] font-semibold bg-zinc-900 text-white hover:bg-zinc-800 transition-colors flex-shrink-0"
+                    <span
+                      className="px-3 py-1 rounded-md text-[11px] font-semibold bg-zinc-900 text-white flex-shrink-0"
                     >
                       @ Try
-                    </button>
+                    </span>
                   </div>
                 </div>
 
