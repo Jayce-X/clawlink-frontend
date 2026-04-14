@@ -1,0 +1,18 @@
+#!/usr/bin/expect -f
+set timeout 60
+
+# Upload
+spawn scp -o StrictHostKeyChecking=no -P 51022 dist.tar.gz root@74.211.111.210:/tmp/
+expect "password:"
+send "rOqSPYoBeibQ8XoLcNOA\r"
+expect eof
+
+# Extract
+spawn ssh -o StrictHostKeyChecking=no -p 51022 root@74.211.111.210
+expect "password:"
+send "rOqSPYoBeibQ8XoLcNOA\r"
+expect "# "
+send "mkdir -p /opt/clawlink/staging/demo/ && tar -xzf /tmp/dist.tar.gz -C /opt/clawlink/staging/demo/ && chown -R www-data:www-data /opt/clawlink/staging/demo/ && rm /tmp/dist.tar.gz\r"
+expect "# "
+send "exit\r"
+expect eof

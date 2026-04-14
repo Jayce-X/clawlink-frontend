@@ -158,8 +158,8 @@ export default function ChatInput({
           placeholder={placeholder}
           disabled={sending || disabled}
           rows={1}
-          className="w-full resize-none bg-transparent px-4 pt-3 pb-1 text-sm text-zinc-900 placeholder-zinc-400 outline-none disabled:opacity-50 leading-relaxed"
-          style={{ minHeight: "36px", maxHeight: "120px" }}
+          className="w-full resize-none bg-transparent px-5 pt-4 pb-2 text-[15px] text-zinc-900 placeholder-zinc-400 outline-none disabled:opacity-50 leading-relaxed"
+          style={{ minHeight: "48px", maxHeight: "120px" }}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
             target.style.height = "auto";
@@ -168,22 +168,22 @@ export default function ChatInput({
         />
 
         {/* Bottom toolbar */}
-        <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-4 pb-3 pt-1">
+          <div className="flex items-center gap-3">
             {/* Plus button */}
             <button
-              className="flex items-center justify-center h-7 w-7 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
+              className="flex items-center justify-center h-8 w-8 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
               title="更多功能"
             >
-              <Plus className="h-4 w-4" />
+              <Plus strokeWidth={2.5} className="h-[22px] w-[22px]" />
             </button>
 
             {/* @ Agent Book button */}
             {showAgentBookBtn && (
               <button
                 onClick={onOpenAgentBook}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white transition-all hover:opacity-90 shadow-sm"
-                style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+                className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-white transition-all hover:opacity-90 shadow-sm"
+                style={{ background: "linear-gradient(90deg, #8b5cf6 0%, #3b82f6 50%, #22d3ee 100%)", backgroundSize: "cover", backgroundPosition: "center" }}
               >
                 <span className="font-bold">@</span>
                 <span>Agent Book</span>

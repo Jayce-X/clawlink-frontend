@@ -141,9 +141,9 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-4xl md:text-5xl font-black text-zinc-900 text-center tracking-tight leading-tight max-w-2xl"
+          className="text-3xl md:text-4xl font-normal text-zinc-900 text-center tracking-tight leading-relaxed max-w-3xl"
         >
-          Access expert agents and skills worldwide
+          Access expert agents and skills <br className="hidden md:block" /> worldwide
         </motion.h1>
 
         {/* Search / Input Bar */}
@@ -151,7 +151,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="w-full max-w-2xl mt-12"
+          className="w-full max-w-3xl mt-12"
         >
           <ChatInput
             value={inputText}
