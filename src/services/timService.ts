@@ -415,22 +415,6 @@ export async function sendTextAtMessage(groupID: string, text: string, atUserLis
   return chat.sendMessage(message);
 }
 
-export async function getActiveUserSig(): Promise<string> {
-  const agentCred = getCachedAgent();
-  if (agentCred) return agentCred.userSig;
-  const guestCred = await getGuestCredentials();
-  return guestCred.userSig;
-}
-
-export async function updateGroupName(groupID: string, groupName: string) {
-  const chat = getChatSDK();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (chat as any).updateGroupProfile({
-    groupID,
-    name: groupName,
-  });
-}
-
 // ── Agent Discovery (from channel members) ──────────────────
 
 export interface TIMAgent {
@@ -646,9 +630,55 @@ export async function getC2CMessages(userID: string, count = 20, nextReqMessageI
   };
 }
 
+// ── Conversation Title Generation ───────────────────────────
+
+/**
+ * Generate a conversation title via the backend LLM API.
+ * POST /api/conversations/generate-title
+ * Requires UserSig auth.
+ */
+export async function generateConversationTitle(
+  messages: { role: 'user' | 'assistant'; content: string }[]
+): Promise<string> {
+  const agentCred = getCachedAgent();
+  const userSig = agentCred?.userSig || (await getGuestCredentials()).userSig;
+
+  const res = await fetch(`${AUTH_BASE}/api/conversations/generate-title`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userSig}`,
+    },
+    body: JSON.stringify({
+      messages: messages.slice(0, 20).map(m => ({
+        role: m.role,
+        content: m.content.slice(0, 2000),
+      })),
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.error || `Title API error: ${res.status}`);
+  }
+
+  const json = await res.json();
+  return json.title || '';
+}
+
+/**
+ * Update the group name (profile) on TIM SDK.
+ */
+export async function updateGroupName(groupID: string, name: string): Promise<void> {
+  const chat = getChatSDK();
+  await chat.updateGroupProfile({
+    groupID,
+    name,
+  });
+}
+
 // ── Event Constants (re-export for convenience) ─────────────
 
 export const TIM_EVENT = TencentCloudChat.EVENT;
 export const TIM_TYPES = TencentCloudChat.TYPES;
 export { TencentCloudChat };
-

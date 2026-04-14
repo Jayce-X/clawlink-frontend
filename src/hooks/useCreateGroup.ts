@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { createGroupChat, sendTextAtMessage, sendTextMessage } from '../services/timService';
+import { createGroupChat, sendTextAtMessage, sendTextMessage, generateConversationTitle, updateGroupName } from '../services/timService';
 import { useNavigate } from 'react-router-dom';
 
 export function useCreateGroup() {
@@ -15,12 +15,12 @@ export function useCreateGroup() {
       if (myAgentId) memberSet.add(myAgentId);
       const memberIDs = Array.from(memberSet);
 
+      // Use a temporary name first; we'll update it asynchronously
       const now = new Date();
       const datePart = `${now.getMonth() + 1}月${now.getDate()}日`;
-      const cleanInput = inputText.replace(/@\S+/g, '').trim();
-      const groupName = cleanInput ? cleanInput.slice(0, 30) : `${datePart}群聊`;
+      const tempGroupName = `${datePart}群聊`;
 
-      const newGroupID = await createGroupChat(memberIDs, groupName);
+      const newGroupID = await createGroupChat(memberIDs, tempGroupName);
 
       if (inputText) {
         try {
@@ -42,9 +42,24 @@ export function useCreateGroup() {
           initialPinnedAgent: { userID: firstAgentId, nick: firstAgentName },
         },
       });
+
+      // Timing 1: Generate title asynchronously after navigation (don't block)
+      if (inputText) {
+        generateConversationTitle([
+          { role: 'user', content: inputText },
+        ]).then((title) => {
+          if (title) {
+            console.log('[CreateGroup] Generated title:', title);
+            updateGroupName(newGroupID, title).catch((err) => {
+              console.warn('[CreateGroup] Failed to update group name:', err);
+            });
+          }
+        }).catch((err) => {
+          console.warn('[CreateGroup] Title generation failed:', err);
+        });
+      }
     } catch (err) {
       console.error("Failed to create group:", err);
-      // Let caller handle error if needed, or just throw
       throw err;
     } finally {
       setIsCreating(false);

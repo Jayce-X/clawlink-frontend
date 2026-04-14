@@ -5,10 +5,10 @@ import {
   getChannelMessages, getChannelMembers, getChannelProfile,
   getC2CMessages, sendTextMessage, sendC2CTextMessage, sendTextAtMessage,
   joinChannel, getUserProfiles, addMembersToGroup, removeMembersFromGroup,
-  getChatSDK, TIM_EVENT, TIM_TYPES, updateGroupName,
+  getChatSDK, TIM_EVENT, TIM_TYPES,
+  generateConversationTitle, updateGroupName,
   type TIMConversation,
 } from "../../services/timService";
-import { generateConversationTitle } from "../../services/titleService";
 import type { HubMessage, HubReaction } from "../../types";
 import MentionPickerPopup, { type MentionAgent } from "./MentionPickerPopup";
 import ChatInput from "../../components/ChatInput";
@@ -375,13 +375,10 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
   const [isOwner, setIsOwner] = useState(false);
   const [myUserID, setMyUserID] = useState("");
 
-  const titleGeneratedFirstRef = useRef(false);
-  const titleGeneratedTenthRef = useRef(false);
-
-  useEffect(() => {
-    titleGeneratedFirstRef.current = false;
-    titleGeneratedTenthRef.current = false;
-  }, [conversation.conversationID]);
+  // ── Title generation tracking ─────────────────────────────
+  const titleGenTriggeredByAgent = useRef(false);  // timing 2: first non-self message
+  const titleGenTriggeredAt10 = useRef(false);      // timing 3: 10 messages
+  const titleGenInFlight = useRef(false);            // prevent concurrent calls
 
   useImperativeHandle(ref, () => ({
     appendAgentMention(nameOrId: string, avatarUrl: string = "") {
@@ -596,46 +593,26 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
             agentName: nickCacheRef.current[m.agentId] || m.agentName,
             avatarUrl: avatarCacheRef.current[m.agentId] || m.avatarUrl || "",
           }));
-
         setMessages((prev) => {
           const updated = [...prev, ...hubMsgs];
-          
-          if (isGroup) {
-            const priorAITalkCount = prev.filter(m => m.type !== 'system' && isAIAgent(m.agentId)).length;
-            const newAITalks = hubMsgs.some(m => m.type !== 'system' && isAIAgent(m.agentId));
-            const totalConversations = updated.filter(m => m.type !== 'system').length;
 
-            const triggerTitleGeneration = async (currentMsgs: HubMessage[]) => {
-              const messagesForAPI = currentMsgs
-                .filter(m => m.type !== 'system')
-                .slice(-20)
-                .map(m => ({
-                  role: isAIAgent(m.agentId) ? "assistant" : "user",
-                  content: m.content
-                }));
-          
-              if (messagesForAPI.length === 0) return;
-          
-              try {
-                const generatedTitle = await generateConversationTitle(messagesForAPI);
-                if (generatedTitle) {
-                   await updateGroupName(targetId, generatedTitle);
-                   setHeaderInfo(prevHeader => prevHeader ? { ...prevHeader, name: generatedTitle } : null);
-                }
-              } catch (err) {
-                console.error("Title generation trigger failed:", err);
-              }
-            };
+          // ── Title generation triggers (async, non-blocking) ──
+          if (isGroup && !titleGenInFlight.current) {
+            const hasNonSelfMsg = relevantMsgs.some((m) => m.from !== myUserID);
 
-            if (priorAITalkCount === 0 && newAITalks && !titleGeneratedFirstRef.current) {
-              titleGeneratedFirstRef.current = true;
+            // Timing 2: first non-self (agent) reply
+            if (hasNonSelfMsg && !titleGenTriggeredByAgent.current) {
+              titleGenTriggeredByAgent.current = true;
               triggerTitleGeneration(updated);
-            } else if (totalConversations >= 10 && !titleGeneratedTenthRef.current) {
-              titleGeneratedTenthRef.current = true;
+            }
+
+            // Timing 3: total messages reach 10
+            if (updated.length >= 10 && !titleGenTriggeredAt10.current) {
+              titleGenTriggeredAt10.current = true;
               triggerTitleGeneration(updated);
             }
           }
-          
+
           return updated;
         });
       }
@@ -643,7 +620,42 @@ const ChatPanel = forwardRef<ChatPanelHandle, Props & { onError?: (msg: string) 
 
     chat.on(TIM_EVENT.MESSAGE_RECEIVED, onMessage);
     return () => { chat.off(TIM_EVENT.MESSAGE_RECEIVED, onMessage); };
-  }, [conversation.conversationID, targetId, isGroup]);
+  }, [conversation.conversationID, targetId, isGroup, myUserID]);
+
+  // ── Title generation helper ───────────────────────────────
+  const triggerTitleGeneration = useCallback((allMessages: HubMessage[]) => {
+    if (titleGenInFlight.current || !isGroup) return;
+    titleGenInFlight.current = true;
+
+    // Convert HubMessages to the API format
+    const apiMessages = allMessages
+      .filter((m) => m.type !== 'system')
+      .slice(-20)
+      .map((m) => ({
+        role: (m.agentId === myUserID ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.content,
+      }));
+
+    if (apiMessages.length === 0) {
+      titleGenInFlight.current = false;
+      return;
+    }
+
+    console.log('[ChatPanel] Generating title with', apiMessages.length, 'messages');
+    generateConversationTitle(apiMessages)
+      .then((title) => {
+        if (title) {
+          console.log('[ChatPanel] Generated title:', title);
+          return updateGroupName(targetId, title);
+        }
+      })
+      .catch((err) => {
+        console.warn('[ChatPanel] Title generation failed:', err);
+      })
+      .finally(() => {
+        titleGenInFlight.current = false;
+      });
+  }, [isGroup, targetId, myUserID]);
 
   // ── Auto-scroll ───────────────────────────────────────────
   useEffect(() => {
