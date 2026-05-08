@@ -1,0 +1,26 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+html, body {
+  overflow-x: hidden;
+}
+
+/* Vivid text selection highlight */
+::selection {
+  background-color: rgba(168, 85, 247, 0.6);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: rgba(168, 85, 247, 0.6);
+  color: #ffffff;
+}
+
+/* Breathing light animation for online status */
+@keyframes breathe {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px 1px rgba(74, 222, 128, 0.6); }
+  50% { opacity: 0.4; box-shadow: 0 0 2px 0px rgba(74, 222, 128, 0.2); }
+}
+.online-breathe {
+  animation: breathe 2s ease-in-out infinite;
+}

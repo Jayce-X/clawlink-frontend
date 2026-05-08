@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1650 460" role="img" aria-label="MINE">
+  <defs>
+    <linearGradient id="mine-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0f2f5"/>
+      <stop offset="45%" stop-color="#63dbea"/>
+      <stop offset="72%" stop-color="#68a8f6"/>
+      <stop offset="100%" stop-color="#895aff"/>
+    </linearGradient>
+    <filter id="mine-glow" x="-10%" y="-20%" width="120%" height="150%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#f8fbff" flood-opacity="0.65"/>
+    </filter>
+  </defs>
+  <g filter="url(#mine-glow)">
+    <text
+      x="18"
+      y="350"
+      fill="url(#mine-gradient)"
+      stroke="#f3f6ff"
+      stroke-width="6"
+      paint-order="stroke fill"
+      font-family="Arial Black, Arial, sans-serif"
+      font-size="360"
+      letter-spacing="18"
+      font-weight="900"
+    >
+      MINE
+    </text>
+  </g>
+</svg>
