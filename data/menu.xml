@@ -1,0 +1,34 @@
+<mxfile host="app.diagrams.net" modified="2021-11-10T23:30:21.028Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36" etag="tWZ02bGHyXr1e7ddorqg" compressed="false" version="15.7.2" type="device">
+  <diagram id="e1k7WPy5bhWz5Tn2neuC" name="Page-1">
+    <mxGraphModel dx="2946" dy="537" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="hLVgbzFJ1_9lM7NRVtGH-1" value="menu_opacity=1--ease_in_out_cubic" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="10" y="340" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n74Zm3L9Sz8JzrZIjJu0-1" value="header_opacity=1--ease_in_out_cubic" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="60" y="280" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="1FulOsLHO0BM3Cu0Cw8Z-1" value="camera_x=-3.5--ease_in_out_quint" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="10" y="520" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="1FulOsLHO0BM3Cu0Cw8Z-2" value="menu_view.select_first_item" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="-10" y="670" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="1FulOsLHO0BM3Cu0Cw8Z-3" value="menu_button_opacity=0--ease_in_out_cubic" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="10" y="400" width="50" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="XrOO3qqO6eAag7L_VuLa-1" value="header_component.on_enter" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="-8" y="190" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="XrOO3qqO6eAag7L_VuLa-3" value="camera_y_mobile=16.5--ease_in_out_quint" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="10" y="580" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="TVzv20nOh-EltDTwvTSN-1" value="volume_button_opacity=0--ease_in_out_cubic" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="460" width="50" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
